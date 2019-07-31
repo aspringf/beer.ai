@@ -62,8 +62,8 @@ def ferm(core, ing):
     print(f"----{in_range.sum()}/{len(core)} have ferm yields in range (0-1)")
     # Color
     print(f"----{non_nan['ferm_color'].sum()}/{len(core)} have ferm colors")
-    in_range = gb["ferm_color"].apply(lambda x: ((x > 0)&(x <= 50)).all())
-    print(f"----{in_range.sum()}/{len(core)} have ferm colors in range (0-50)")
+    in_range = gb["ferm_color"].apply(lambda x: ((x > 0)&(x <= 1000)).all())
+    print(f"----{in_range.sum()}/{len(core)} have ferm colors in range (0-1000)")
 
 
 def main(functions=[]):
