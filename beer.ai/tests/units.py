@@ -16,26 +16,54 @@ def register(s):
 @register("efficiency")
 def efficiency(core, ing):
     """Check if efficiency exists and is between 0 and 1"""
-    print("Efficiency exists?")
+    print("Efficiency Sanity")
     n_na = core["efficiency"].isna().sum()
     n_exist = len(core) - n_na
     print(f"----{n_exist} exist, {n_na} NaNs.")
-    print("Efficiency between 0-1?")
     col = core["efficiency"].dropna()
     n_good = ((col <= 1)&(col > 0)).sum()
     n_bad = ((col > 1)|(col <= 0)).sum()
-    print(f"----{n_good} good, {n_bad} out of range.")
+    print(f"----{n_good} between 0-1, {n_bad} out of range.")
 
 
 @register("boilbatch")
 def boil_batch(core, ing):
-    """Check which recipes have neither of boil/batch size, or have both <= 0."""
-    print("Boil/batch exist?")
+    """Check which recipes have sane boil/batch sizes and times."""
+    print("Boil/Batch Sanity")
     one_exists = (~core["boil_size"].isna() & ~core["batch_size"].isna()).sum()
     neither_exists = len(core) - one_exists
     print(f"----{one_exists} has at least one, {neither_exists} has neither.")
     bad_values = ((core["boil_size"] <= 0) & (core["batch_size"] <= 0)).sum()
     print(f"----{bad_values} have batch/boil <= 0.")
+    boil_gt = (core["boil_size"] > 4).sum()
+    boil_lt = len(core) - boil_gt
+    batch_gt = (core["batch_size"] > 4).sum()
+    batch_lt = len(core) - batch_gt
+    print(f"----{batch_gt},{boil_gt} batch,boil greater than 4 L, {batch_lt},{boil_lt} less.")
+    # 1440 = minutes per day
+    good_time = ((core["boil_time"] > 0)&(core["boil_time"] < 1440)).sum()
+    print(f"----{good_time}/{len(core)} boil times between 0 and 1440 minutes.")
+
+
+@register("ferm")
+def ferm(core, ing):
+    """Check ferm amounts, yields, and color."""
+    print("Ferm Sanity")
+    ferm_cols = [i for i in ing.columns if i.startswith("ferm")]
+    gb = ing[ferm_cols].groupby("id")
+    non_nan = ~gb[["ferm_amount","ferm_yield", "ferm_color"]].apply(lambda x: x.isnull().all())
+    # Amount
+    print(f"----{non_nan['ferm_amount'].sum()}/{len(core)} have ferm amounts")
+    gt_zero = gb["ferm_amount"].apply(lambda x: (x > 0).all())
+    print(f"----{gt_zero.sum()}/{len(core)} have all ferm amounts > 0")
+    # Yield
+    print(f"----{non_nan['ferm_yield'].sum()}/{len(core)} have ferm yields")
+    in_range = gb["ferm_yield"].apply(lambda x: ((x > 0)&(x <= 1)).all())
+    print(f"----{in_range.sum()}/{len(core)} have ferm yields in range (0-1)")
+    # Color
+    print(f"----{non_nan['ferm_color'].sum()}/{len(core)} have ferm colors")
+    in_range = gb["ferm_color"].apply(lambda x: ((x > 0)&(x <= 50)).all())
+    print(f"----{in_range.sum()}/{len(core)} have ferm colors in range (0-50)")
 
 
 def main(functions=[]):
