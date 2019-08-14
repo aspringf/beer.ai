@@ -66,17 +66,34 @@ def ferm(core, ing):
     print(f"----{in_range.sum()}/{len(core)} have ferm colors in range (0-1000)")
 
 
+@register("hop")
+def hop(core, ing):
+    """Check hop amounts, alpha, time, form, and use."""
+    print("Hop Sanity")
+    hop_cols = [i for i in ing.columns if i.startswith("hop")]
+    # Hop amount
+    non_nan = ing["hop_amount"].dropna()
+    lt_zero = non_nan[non_nan <= 0]
+    gt_zero = len(non_nan.index.unique()) - lt_zero.index.nunique()
+    print(f"----{len(non_nan.index.unique())}/{len(core)} recipes have at least 1 hop. Of those, {gt_zero}/{len(non_nan.index.unique())} are > 0.")
+    # Hop Alpha
+    
+
+
+
 def main(functions=[]):
 
     if functions == []:
-        functions = function_map.values()
+        functions = function_map.keys()
+    # test size
+    n = 1000
 
     with pd.HDFStore("../all_recipes.h5","r") as store:
-        core = store.select("core", where="index < 1000")
-        ing = store.select("ingredients", where="index < 1000")
+        core = store.select("core", where=f"index < {n}")
+        ing = store.select("ingredients", where=f"index < {n}")
 
-    for func in functions:
-        func(core, ing)
+    for func_str in functions:
+        function_map[func_str](core, ing)
 
 
 def make_args():
@@ -84,9 +101,20 @@ def make_args():
             description="Script to check if different data columns are in expected ranges."
             )
     # Add arguments for each runnable function?
+    parser.add_argument(
+            "-f",
+            "--function",
+            help="Function to run.",
+            choices=function_map.keys(),
+            action="append",
+            dest="functions",
+        )
+
     return parser
 
 if __name__=="__main__":
     parser = make_args()
     args = parser.parse_args()
-    main()
+    if args.functions is None:
+        args.functions = function_map.keys()
+    main(args.functions)
