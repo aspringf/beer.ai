@@ -11,3 +11,6 @@ tables
 wget
 tqdm
 seaborn
+plotly
+dash
+dash_bootstrap_components
